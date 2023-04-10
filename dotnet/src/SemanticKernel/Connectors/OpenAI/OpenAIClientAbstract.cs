@@ -259,6 +259,7 @@ public abstract class OpenAIClientAbstract : IDisposable
             responseJson = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
+                this.Log.LogDebug("Bad HTTP response: {0}", responseJson);
                 switch (response.StatusCode)
                 {
                     case HttpStatusCode.BadRequest:

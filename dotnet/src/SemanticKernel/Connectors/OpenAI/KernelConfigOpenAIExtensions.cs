@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using System.Net;
 using Microsoft.SemanticKernel.AI.ChatCompletion;
 using Microsoft.SemanticKernel.AI.Embeddings;
 using Microsoft.SemanticKernel.AI.ImageGeneration;
@@ -59,7 +60,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same name exists</param>
     /// <returns>Self instance</returns>
     public static KernelConfig AddOpenAITextCompletionService(this KernelConfig config,
-        string serviceId, string modelId, string apiKey, string? orgId = null, bool overwrite = false)
+        string serviceId, string modelId, string endpoint, string apiKey, string? orgId = null, bool overwrite = false)
     {
         Verify.NotEmpty(serviceId, "The service Id provided is empty");
 
@@ -71,7 +72,7 @@ public static class KernelConfigOpenAIExtensions
         }
 
         ITextCompletion Factory(IKernel kernel) => new OpenAITextCompletion(
-            modelId, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
+            modelId, endpoint, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
 
         config.AddTextCompletionService(serviceId, Factory, overwrite);
 
@@ -122,7 +123,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same id exists</param>
     /// <returns>Self instance</returns>
     public static KernelConfig AddOpenAIEmbeddingGenerationService(this KernelConfig config,
-        string serviceId, string modelId, string apiKey, string? orgId = null, bool overwrite = false)
+        string serviceId, string modelId, string endpoint, string apiKey, string? orgId = null, bool overwrite = false)
     {
         Verify.NotEmpty(serviceId, "The service Id provided is empty");
 
@@ -134,7 +135,7 @@ public static class KernelConfigOpenAIExtensions
         }
 
         IEmbeddingGeneration<string, float> Factory(IKernel kernel) => new OpenAITextEmbeddingGeneration(
-            modelId, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
+            modelId, endpoint, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
 
         config.AddTextEmbeddingGenerationService(serviceId, Factory, overwrite);
 
@@ -153,7 +154,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same name exists</param>
     /// <returns>Self instance</returns>
     public static KernelConfig AddOpenAIChatCompletionService(this KernelConfig config,
-        string serviceId, string modelId, string apiKey, string? orgId = null, bool overwrite = false)
+        string serviceId, string modelId, string endpoint, string apiKey, string? orgId = null, bool overwrite = false)
     {
         Verify.NotEmpty(serviceId, "The service Id provided is empty");
 
@@ -165,7 +166,7 @@ public static class KernelConfigOpenAIExtensions
         }
 
         IChatCompletion Factory(IKernel kernel) => new OpenAIChatCompletion(
-            modelId, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
+            modelId, endpoint, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
 
         config.AddChatCompletionService(serviceId, Factory, overwrite);
 
@@ -182,7 +183,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same name exists</param>
     /// <returns>Self instance</returns>
     public static KernelConfig AddOpenAIImageGenerationService(this KernelConfig config,
-        string serviceId, string apiKey, string? orgId = null, bool overwrite = false)
+        string serviceId, string endpoint, string apiKey, string? orgId = null, bool overwrite = false)
     {
         Verify.NotEmpty(serviceId, "The service Id provided is empty");
 
@@ -194,7 +195,7 @@ public static class KernelConfigOpenAIExtensions
         }
 
         IImageGeneration Factory(IKernel kernel) => new OpenAIImageGeneration(
-            apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
+            endpoint, apiKey, orgId, kernel.Log, kernel.Config.HttpHandlerFactory);
 
         config.AddImageGenerationService(serviceId, Factory, overwrite);
 

@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel.AI.Embeddings;
@@ -21,6 +23,7 @@ public sealed class OpenAITextEmbeddingGeneration : OpenAIClientAbstract, IEmbed
     private const string OpenaiEmbeddingEndpoint = $"{OpenaiEndpoint}/embeddings";
 
     private readonly string _modelId;
+    private readonly string _openaiEmbeddingEndpoint;
 
     /// <summary>
     /// Create an instance of OpenAI embeddings endpoint client
@@ -30,12 +33,22 @@ public sealed class OpenAITextEmbeddingGeneration : OpenAIClientAbstract, IEmbed
     /// <param name="organization">Optional OpenAI organization ID, usually required only if your account belongs to multiple organizations</param>
     /// <param name="log">Application logger</param>
     /// <param name="handlerFactory">Retry handler factory for HTTP requests.</param>
-    public OpenAITextEmbeddingGeneration(string modelId, string apiKey, string? organization = null, ILogger? log = null,
+    public OpenAITextEmbeddingGeneration(string modelId, string endpoint, string apiKey, string? organization = null, ILogger? log = null,
         IDelegatingHandlerFactory? handlerFactory = null)
         : base(log, handlerFactory)
     {
         Verify.NotEmpty(modelId, "The OpenAI model ID cannot be empty");
         this._modelId = modelId;
+
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+
+            this._openaiEmbeddingEndpoint = $"{endpoint.TrimEnd('/')}/v1/embeddings";
+        }
+        else
+        {
+            this._openaiEmbeddingEndpoint = OpenaiEmbeddingEndpoint;
+        }
 
         Verify.NotEmpty(apiKey, "The OpenAI API key cannot be empty");
         this.HTTPClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
@@ -51,6 +64,6 @@ public sealed class OpenAITextEmbeddingGeneration : OpenAIClientAbstract, IEmbed
     {
         var requestBody = Json.Serialize(new OpenAITextEmbeddingRequest { Model = this._modelId, Input = data, });
 
-        return await this.ExecuteTextEmbeddingRequestAsync(OpenaiEmbeddingEndpoint, requestBody);
+        return await this.ExecuteTextEmbeddingRequestAsync(this._openaiEmbeddingEndpoint, requestBody);
     }
 }

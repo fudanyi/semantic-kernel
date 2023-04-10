@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,9 +21,11 @@ public class OpenAIChatCompletion : OpenAIClientAbstract, IChatCompletion
     private const string OpenaiEndpoint = "https://api.openai.com/v1/chat/completions";
 
     private readonly string _modelId;
+    private readonly string _openaiEndpoint;
 
     public OpenAIChatCompletion(
         string modelId,
+        string endpoint,
         string apiKey,
         string? organization = null,
         ILogger? log = null,
@@ -31,6 +34,16 @@ public class OpenAIChatCompletion : OpenAIClientAbstract, IChatCompletion
     {
         Verify.NotEmpty(modelId, "The OpenAI model ID cannot be empty");
         this._modelId = modelId;
+
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+
+            this._openaiEndpoint = $"{endpoint.TrimEnd('/')}/v1/chat/completions";
+        }
+        else
+        {
+            this._openaiEndpoint = OpenaiEndpoint;
+        }
 
         Verify.NotEmpty(apiKey, "The OpenAI API key cannot be empty");
         this.HTTPClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
@@ -48,7 +61,7 @@ public class OpenAIChatCompletion : OpenAIClientAbstract, IChatCompletion
         CancellationToken cancellationToken = default)
     {
         Verify.NotNull(requestSettings, "Completion settings cannot be empty");
-        this.Log.LogDebug("Sending OpenAI completion request to {0}", OpenaiEndpoint);
+        this.Log.LogDebug("Sending OpenAI completion request to {0}", this._openaiEndpoint);
 
         if (requestSettings.MaxTokens < 1)
         {
@@ -69,7 +82,7 @@ public class OpenAIChatCompletion : OpenAIClientAbstract, IChatCompletion
             Stop = requestSettings.StopSequences is { Count: > 0 } ? requestSettings.StopSequences : null,
         });
 
-        return this.ExecuteChatCompletionRequestAsync(OpenaiEndpoint, requestBody, cancellationToken);
+        return this.ExecuteChatCompletionRequestAsync(this._openaiEndpoint, requestBody, cancellationToken);
     }
 
     /// <inheritdoc/>

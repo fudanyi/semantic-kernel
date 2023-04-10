@@ -21,6 +21,7 @@ public sealed class OpenAITextCompletion : OpenAIClientAbstract, ITextCompletion
     private const string OpenaiEndpoint = "https://api.openai.com/v1/completions";
 
     private readonly string _modelId;
+    private readonly string _openaiEndpoint;
 
     /// <summary>
     /// Create a new instance of OpenAI text generation service
@@ -32,6 +33,7 @@ public sealed class OpenAITextCompletion : OpenAIClientAbstract, ITextCompletion
     /// <param name="handlerFactory">Retry handler</param>
     public OpenAITextCompletion(
         string modelId,
+        string endpoint,
         string apiKey,
         string? organization = null,
         ILogger? log = null,
@@ -40,6 +42,16 @@ public sealed class OpenAITextCompletion : OpenAIClientAbstract, ITextCompletion
     {
         Verify.NotEmpty(modelId, "The OpenAI model ID cannot be empty");
         this._modelId = modelId;
+
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+
+            this._openaiEndpoint = $"{endpoint.TrimEnd('/')}/v1/completions";
+        }
+        else
+        {
+            this._openaiEndpoint = OpenaiEndpoint;
+        }
 
         Verify.NotEmpty(apiKey, "The OpenAI API key cannot be empty");
         this.HTTPClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
@@ -61,7 +73,7 @@ public sealed class OpenAITextCompletion : OpenAIClientAbstract, ITextCompletion
     public Task<string> CompleteAsync(string text, CompleteRequestSettings requestSettings, CancellationToken cancellationToken = default)
     {
         Verify.NotNull(requestSettings, "Completion settings cannot be empty");
-        this.Log.LogDebug("Sending OpenAI completion request to {0}", OpenaiEndpoint);
+        this.Log.LogDebug("Sending OpenAI completion request to {0}", this._openaiEndpoint);
 
         if (requestSettings.MaxTokens < 1)
         {
@@ -82,6 +94,6 @@ public sealed class OpenAITextCompletion : OpenAIClientAbstract, ITextCompletion
             Stop = requestSettings.StopSequences is { Count: > 0 } ? requestSettings.StopSequences : null,
         });
 
-        return this.ExecuteTextCompletionRequestAsync(OpenaiEndpoint, requestBody, cancellationToken);
+        return this.ExecuteTextCompletionRequestAsync(this._openaiEndpoint, requestBody, cancellationToken);
     }
 }

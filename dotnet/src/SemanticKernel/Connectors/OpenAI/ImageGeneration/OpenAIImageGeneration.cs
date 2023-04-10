@@ -18,6 +18,8 @@ public class OpenAIImageGeneration : OpenAIClientAbstract, IImageGeneration
     // 3P OpenAI REST API endpoint
     private const string OpenaiEndpoint = "https://api.openai.com/v1/images/generations";
 
+    private readonly string _openaiEndpoint;
+
     /// <summary>
     /// Create a new instance of OpenAI image generation service
     /// </summary>
@@ -26,12 +28,23 @@ public class OpenAIImageGeneration : OpenAIClientAbstract, IImageGeneration
     /// <param name="log">Logger</param>
     /// <param name="handlerFactory">Retry handler</param>
     public OpenAIImageGeneration(
+        string endpoint,
         string apiKey,
         string? organization = null,
         ILogger? log = null,
         IDelegatingHandlerFactory? handlerFactory = null
     )
     {
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+
+            this._openaiEndpoint = $"{endpoint.TrimEnd('/')}/v1/images/generations";
+        }
+        else
+        {
+            this._openaiEndpoint = OpenaiEndpoint;
+        }
+
         Verify.NotEmpty(apiKey, "The OpenAI API key cannot be empty");
         this.HTTPClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -62,7 +75,7 @@ public class OpenAIImageGeneration : OpenAIClientAbstract, IImageGeneration
             Format = "url",
         });
 
-        var list = await this.ExecuteImageUrlGenerationRequestAsync(OpenaiEndpoint, requestBody, cancellationToken);
+        var list = await this.ExecuteImageUrlGenerationRequestAsync(this._openaiEndpoint, requestBody, cancellationToken);
         return list.First();
     }
 
@@ -76,7 +89,7 @@ public class OpenAIImageGeneration : OpenAIClientAbstract, IImageGeneration
             Format = "b64_json",
         });
 
-        var list = await this.ExecuteImageBase64GenerationRequestAsync(OpenaiEndpoint, requestBody, cancellationToken);
+        var list = await this.ExecuteImageBase64GenerationRequestAsync(this._openaiEndpoint, requestBody, cancellationToken);
         return list.First();
     }
 }
