@@ -23,6 +23,7 @@ public class OpenAIImageGeneration : OpenAIClientAbstract, IImageGeneration
     /// <summary>
     /// Create a new instance of OpenAI image generation service
     /// </summary>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API key, see https://platform.openai.com/account/api-keys</param>
     /// <param name="organization">OpenAI organization id. This is usually optional unless your account belongs to multiple organizations.</param>
     /// <param name="log">Logger</param>

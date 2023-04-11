@@ -27,6 +27,7 @@ public sealed class OpenAITextCompletion : OpenAIClientAbstract, ITextCompletion
     /// Create a new instance of OpenAI text generation service
     /// </summary>
     /// <param name="modelId">OpenAI model name, see https://platform.openai.com/docs/models</param>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API key, see https://platform.openai.com/account/api-keys</param>
     /// <param name="organization">OpenAI organization id. This is usually optional unless your account belongs to multiple organizations.</param>
     /// <param name="log">Logger</param>

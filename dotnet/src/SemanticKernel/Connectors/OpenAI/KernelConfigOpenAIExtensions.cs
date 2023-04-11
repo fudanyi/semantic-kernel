@@ -55,6 +55,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="config">The kernel config instance</param>
     /// <param name="serviceId">A local identifier for the given AI service</param>
     /// <param name="modelId">OpenAI model name, see https://platform.openai.com/docs/models</param>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API key, see https://platform.openai.com/account/api-keys</param>
     /// <param name="orgId">OpenAI organization id. This is usually optional unless your account belongs to multiple organizations.</param>
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same name exists</param>
@@ -118,6 +119,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="config">The kernel config instance</param>
     /// <param name="serviceId">A local identifier for the given AI service</param>
     /// <param name="modelId">OpenAI model name, see https://platform.openai.com/docs/models</param>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API key, see https://platform.openai.com/account/api-keys</param>
     /// <param name="orgId">OpenAI organization id. This is usually optional unless your account belongs to multiple organizations.</param>
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same id exists</param>
@@ -149,6 +151,7 @@ public static class KernelConfigOpenAIExtensions
     /// <param name="config">The kernel config instance</param>
     /// <param name="serviceId">A local identifier for the given AI service</param>
     /// <param name="modelId">OpenAI model name, see https://platform.openai.com/docs/models</param>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API key, see https://platform.openai.com/account/api-keys</param>
     /// <param name="orgId">OpenAI organization id. This is usually optional unless your account belongs to multiple organizations.</param>
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same name exists</param>
@@ -178,6 +181,7 @@ public static class KernelConfigOpenAIExtensions
     /// </summary>
     /// <param name="config">The kernel config instance</param>
     /// <param name="serviceId">A local identifier for the given AI service</param>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API key, see https://platform.openai.com/account/api-keys</param>
     /// <param name="orgId">OpenAI organization id. This is usually optional unless your account belongs to multiple organizations.</param>
     /// <param name="overwrite">Whether to overwrite an existing configuration if the same name exists</param>

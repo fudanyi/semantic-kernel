@@ -29,6 +29,7 @@ public sealed class OpenAITextEmbeddingGeneration : OpenAIClientAbstract, IEmbed
     /// Create an instance of OpenAI embeddings endpoint client
     /// </summary>
     /// <param name="modelId">OpenAI embedding model name</param>
+    /// <param name="endpoint">OpenAI endpoint</param>
     /// <param name="apiKey">OpenAI API Key</param>
     /// <param name="organization">Optional OpenAI organization ID, usually required only if your account belongs to multiple organizations</param>
     /// <param name="log">Application logger</param>
