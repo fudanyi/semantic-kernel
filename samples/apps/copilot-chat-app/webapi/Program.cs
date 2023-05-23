@@ -1,10 +1,16 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-using System.Net;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using SemanticKernel.Service.CopilotChat.Extensions;
 
 namespace SemanticKernel.Service;
 
@@ -17,6 +23,7 @@ public sealed class Program
     /// Entry point
     /// </summary>
     /// <param name="args">Web application command-line arguments.</param>
+    // ReSharper disable once InconsistentNaming
     public static async Task Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -27,13 +34,20 @@ public sealed class Program
 
         // Add in configuration options and Semantic Kernel services.
         builder.Services
-            .AddSingleton<ILogger>(sp => sp.GetRequiredService<ILogger<Program>>()) // some services require an untemplated ILogger
+            .AddSingleton<ILogger>(sp => sp.GetRequiredService<ILogger<Program>>()) // some services require an un-templated ILogger
             .AddOptions(builder.Configuration)
-            .AddSemanticKernelServices()
+            .AddSemanticKernelServices();
+
+        // Add CopilotChat services.
+        builder.Services
+            .AddCopilotChatOptions(builder.Configuration)
+            .AddCopilotChatPlannerServices()
             .AddPersistentChatStore();
 
         // Add in the rest of the services.
         builder.Services
+            .AddApplicationInsightsTelemetry()
+            .AddLogging(logBuilder => logBuilder.AddApplicationInsights())
             .AddAuthorization(builder.Configuration)
             .AddEndpointsApiExplorer()
             .AddSwaggerGen()

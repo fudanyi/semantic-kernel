@@ -4,11 +4,11 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.Skills.MsGraph;
 using Microsoft.SemanticKernel.Skills.MsGraph.Models;
 using Moq;
+using SemanticKernel.Skills.UnitTests.XunitHelpers;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.SemanticKernel.Skills.MsGraph.CalendarSkill;
@@ -23,7 +23,7 @@ public class CalendarSkillTests : IDisposable
     public CalendarSkillTests(ITestOutputHelper output)
     {
         this._logger = new XunitLogger<SKContext>(output);
-        this._context = new SKContext(new ContextVariables(), NullMemory.Instance, null, this._logger);
+        this._context = new SKContext(logger: this._logger);
     }
 
     [Fact]
@@ -37,9 +37,9 @@ public class CalendarSkillTests : IDisposable
         DateTimeOffset anyEndTime = DateTimeOffset.Now + TimeSpan.FromDays(1.1);
         string[] anyAttendees = new[] { Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), Guid.NewGuid().ToString() };
 
-        CalendarEvent expected = new(anySubject, anyStartTime, anyEndTime)
+        CalendarEvent expected = new()
         {
-            Content = anyContent,
+            Subject = anySubject,
             Location = anyLocation,
             Attendees = anyAttendees
         };
@@ -74,10 +74,13 @@ public class CalendarSkillTests : IDisposable
         DateTimeOffset anyEndTime = DateTimeOffset.Now + TimeSpan.FromDays(1.1);
         string[] anyAttendees = new[] { Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), Guid.NewGuid().ToString() };
 
-        CalendarEvent expected = new(anySubject, anyStartTime, anyEndTime)
+        CalendarEvent expected = new()
         {
             Content = anyContent,
-            Attendees = anyAttendees
+            Subject = anySubject,
+            Attendees = anyAttendees,
+            Start = anyStartTime,
+            End = anyEndTime
         };
 
         Mock<ICalendarConnector> connectorMock = new();
@@ -109,8 +112,11 @@ public class CalendarSkillTests : IDisposable
         DateTimeOffset anyEndTime = DateTimeOffset.Now + TimeSpan.FromDays(1.1);
         string[] anyAttendees = new[] { Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), Guid.NewGuid().ToString() };
 
-        CalendarEvent expected = new(anySubject, anyStartTime, anyEndTime)
+        CalendarEvent expected = new()
         {
+            Subject = anySubject,
+            Start = anyStartTime,
+            End = anyEndTime,
             Location = anyLocation,
             Attendees = anyAttendees
         };
@@ -144,8 +150,11 @@ public class CalendarSkillTests : IDisposable
         DateTimeOffset anyStartTime = DateTimeOffset.Now + TimeSpan.FromDays(1);
         DateTimeOffset anyEndTime = DateTimeOffset.Now + TimeSpan.FromDays(1.1);
 
-        CalendarEvent expected = new(anySubject, anyStartTime, anyEndTime)
+        CalendarEvent expected = new()
         {
+            Subject = anySubject,
+            Start = anyStartTime,
+            End = anyEndTime,
             Content = anyContent,
             Location = anyLocation
         };

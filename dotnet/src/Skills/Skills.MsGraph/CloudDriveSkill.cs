@@ -47,7 +47,7 @@ public class CloudDriveSkill
         this._logger.LogDebug("Getting file content for '{0}'", filePath);
         Stream fileContentStream = await this._connector.GetFileContentStreamAsync(filePath, context.CancellationToken).ConfigureAwait(false);
 
-        using StreamReader sr = new StreamReader(fileContentStream);
+        using StreamReader sr = new(fileContentStream);
         string content = await sr.ReadToEndAsync().ConfigureAwait(false);
         this._logger.LogDebug("File content: {0}", content);
         return content;
@@ -87,9 +87,9 @@ public class CloudDriveSkill
     public async Task<string> CreateLinkAsync(string filePath, SKContext context)
     {
         this._logger.LogDebug("Creating link for '{0}'", filePath);
-        const string type = "view"; // TODO expose this as an SK variable
-        const string scope = "anonymous"; // TODO expose this as an SK variable
+        const string Type = "view"; // TODO expose this as an SK variable
+        const string Scope = "anonymous"; // TODO expose this as an SK variable
 
-        return await this._connector.CreateShareLinkAsync(filePath, type, scope, context.CancellationToken).ConfigureAwait(false);
+        return await this._connector.CreateShareLinkAsync(filePath, Type, Scope, context.CancellationToken).ConfigureAwait(false);
     }
 }

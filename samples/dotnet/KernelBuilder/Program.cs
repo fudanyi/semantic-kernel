@@ -4,11 +4,17 @@
 // The easier way to instantiate the Semantic Kernel is to use KernelBuilder.
 // You can access the builder using either Kernel.Builder or KernelBuilder.
 
+#pragma warning disable CA1852
+#pragma warning disable CA1050
+
 using Microsoft.SemanticKernel.AI.TextCompletion;
 using Microsoft.SemanticKernel.Connectors.AI.OpenAI.TextCompletion;
 using Microsoft.SemanticKernel.Connectors.AI.OpenAI.TextEmbedding;
+using Microsoft.SemanticKernel.Services;
 
-IKernel kernel1 = KernelBuilder.Create();
+#pragma warning disable CA1852 // Seal internal types
+IKernel kernel1 = Kernel.Builder.Build();
+#pragma warning restore CA1852 // Seal internal types
 
 IKernel kernel2 = Kernel.Builder.Build();
 
@@ -41,17 +47,21 @@ var kernelX3 = builderX.Build();
 // Manually setup all the dependencies used internally by the kernel
 var logger = NullLogger.Instance;
 var memoryStorage = new VolatileMemoryStore();
-var textEmbeddingGenerator = new AzureTextEmbeddingGeneration("modelId", "https://...", "apiKey", log: logger);
+var textEmbeddingGenerator = new AzureTextEmbeddingGeneration("modelId", "https://...", "apiKey", logger: logger);
 var memory = new SemanticTextMemory(memoryStorage, textEmbeddingGenerator);
 var skills = new SkillCollection();
 var templateEngine = new PromptTemplateEngine(logger);
 var config = new KernelConfig();
-var httpHandlerFactory = new DefaultHttpRetryHandlerFactory(new HttpRetryConfig());
-ITextCompletion Factory(IKernel kernel) => new AzureTextCompletion("deploymentName", "https://...", "apiKey", httpHandlerFactory, logger);
-config.AddTextCompletionService("foo", Factory);
+
+var httpHandler = new DefaultHttpRetryHandler(new HttpRetryConfig(), logger);
+var httpClient = new HttpClient(httpHandler);
+var aiServices = new AIServiceCollection();
+ITextCompletion Factory() => new AzureTextCompletion("deploymentName", "https://...", "apiKey", httpClient, logger);
+aiServices.SetService("foo", Factory);
+IAIServiceProvider aiServiceProvider = aiServices.Build();
 
 // Create kernel manually injecting all the dependencies
-var kernel3 = new Kernel(skills, templateEngine, memory, config, logger);
+var kernel3 = new Kernel(skills, aiServiceProvider, templateEngine, memory, config, logger);
 
 // ==========================================================================================================
 // The kernel builder purpose is to simplify this process, automating how dependencies
@@ -61,10 +71,7 @@ var kernel3 = new Kernel(skills, templateEngine, memory, config, logger);
 var kernel4 = Kernel.Builder
     .WithLogger(NullLogger.Instance)
     .WithMemory(memory)
-    .Configure(c =>
-    {
-        c.AddAzureTextCompletionService("foo", "deploymentName", "https://...", "apiKey");
-    })
+    .WithAzureTextCompletionService("deploymentName", "https://...", "apiKey")
     .Build();
 
 // Example: how to use a custom memory storage and custom embedding generator
@@ -77,35 +84,16 @@ var kernel5 = Kernel.Builder
 var kernel6 = Kernel.Builder
     .WithLogger(NullLogger.Instance)
     .WithMemoryStorage(memoryStorage) // Custom memory storage
-    .Configure(c =>
-    {
-        // This will be used when using AI completions
-        c.AddAzureTextCompletionService("myName1", "completionDeploymentName", "https://...", "apiKey");
-
-        // This will be used when indexing memory records
-        c.AddAzureTextEmbeddingGenerationService("myName2", "embeddingsDeploymentName", "https://...", "apiKey");
-    })
+    .WithAzureTextCompletionService("myName1", "completionDeploymentName", "https://...", "apiKey") // This will be used when using AI completions
+    .WithAzureTextEmbeddingGenerationService("myName2", "embeddingsDeploymentName", "https://...", "apiKey") // This will be used when indexing memory records
     .Build();
 
 // ==========================================================================================================
-// The kernel configuration can be defined with the builder, but can also be managed
-// when the kernel instance is already created.
+// The AI services are defined with the builder
 
 var kernel7 = Kernel.Builder
-    .Configure(c =>
-    {
-        c.AddAzureTextCompletionService("myName1", "completionDeploymentName", "https://...", "apiKey");
-    })
-    .Configure(c =>
-    {
-        c.SetDefaultTextEmbeddingGenerationService("myName3");
-    })
+    .WithAzureTextCompletionService("myName1", "completionDeploymentName", "https://...", "apiKey", true)
     .Build();
-
-kernel7.Config
-    .AddAzureTextEmbeddingGenerationService("myName2", "embeddingsDeploymentName1", "https://...", "apiKey")
-    .AddAzureTextEmbeddingGenerationService("myName3", "embeddingsDeploymentName2", "https://...", "apiKey")
-    .AddOpenAITextCompletionService("myName4", "text-davinci-003", "sk-...");
 
 // ==========================================================================================================
 // When invoking AI, by default the kernel will retry on transient errors, such as throttling and timeouts.

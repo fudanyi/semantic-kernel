@@ -1,9 +1,14 @@
+// Copyright (c) Microsoft. All rights reserved.
+
+import { AdditionalApiProperties, AuthHeaderTags } from '../../redux/features/plugins/PluginsState';
+
 interface ServiceRequest {
     commandPath: string;
     method?: string;
-    body?: unknown;
+    body?: FormData | unknown;
 }
 const noResponseBodyStatusCodes = [202];
+const noResponseBodyOperations = ['importDocument'];
 
 export class BaseService {
     // eslint-disable-next-line @typescript-eslint/space-before-function-paren
@@ -12,30 +17,56 @@ export class BaseService {
     protected readonly getResponseAsync = async <T>(
         request: ServiceRequest,
         accessToken: string,
-        connectorAccessToken?: string,
+        enabledPlugins?: {
+            headerTag: AuthHeaderTags;
+            authData: string;
+            apiProperties?: AdditionalApiProperties;
+        }[],
     ): Promise<T> => {
         const { commandPath, method, body } = request;
+        const isFormData = body instanceof FormData;
+
         const headers = new Headers({
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
         });
 
-        //TODO: not sure what scenario this helps with?
-        if (connectorAccessToken) headers.append(`sk-copilot-connector-access-token`, connectorAccessToken);
+        if (!isFormData) {
+            headers.append(`Content-Type`, 'application/json');
+        }
+
+        // API key auth for private hosted instances
+        if (process.env.REACT_APP_SK_API_KEY) {
+            headers.append(`x-sk-api-key`, process.env.REACT_APP_SK_API_KEY as string);
+        }
+
+        if (enabledPlugins && enabledPlugins.length > 0) {
+            // For each enabled plugin, pass its auth information as a customer header
+            // to the backend so the server can authenticate to the plugin
+            for (var idx in enabledPlugins) {
+                var plugin = enabledPlugins[idx];
+                headers.append(`x-sk-copilot-${plugin.headerTag}-auth`, plugin.authData);
+            }
+        }
 
         try {
             const requestUrl = new URL(commandPath, this.serviceUrl);
             const response = await fetch(requestUrl, {
                 method: method ?? 'GET',
-                body: JSON.stringify(body),
+                body: isFormData ? body : JSON.stringify(body),
                 headers: headers,
             });
 
             if (!response.ok) {
-                throw Object.assign(new Error(response.statusText + ' => ' + (await response.text())));
+                const responseText = await response.text();
+                const errorMessage =
+                    `${response.status}: ${response.statusText}` + (responseText ? ` => ${responseText}` : '');
+
+                throw Object.assign(new Error(errorMessage));
             }
 
-            return noResponseBodyStatusCodes.includes(response.status) ? ({} as T) : ((await response.json()) as T);
+            return noResponseBodyOperations.includes(commandPath) || noResponseBodyStatusCodes.includes(response.status)
+                ? ({} as T)
+                : ((await response.json()) as T);
         } catch (e) {
             var additional_error_msg = '';
             if (e instanceof TypeError) {
