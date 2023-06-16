@@ -7,6 +7,7 @@ using Microsoft.SemanticKernel.AI.Embeddings;
 using Microsoft.SemanticKernel.Diagnostics;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Reliability;
+using Microsoft.SemanticKernel.Security;
 using Microsoft.SemanticKernel.Services;
 using Microsoft.SemanticKernel.SkillDefinition;
 using Microsoft.SemanticKernel.TemplateEngine;
@@ -20,12 +21,13 @@ namespace Microsoft.SemanticKernel;
 public sealed class KernelBuilder
 {
     private KernelConfig _config = new();
-    private ISemanticTextMemory _memory = NullMemory.Instance;
+    private Func<ISemanticTextMemory> _memoryFactory = () => NullMemory.Instance;
     private ILogger _logger = NullLogger.Instance;
-    private IMemoryStore? _memoryStorage = null;
+    private Func<IMemoryStore>? _memoryStorageFactory = null;
     private IDelegatingHandlerFactory? _httpHandlerFactory = null;
     private IPromptTemplateEngine? _promptTemplateEngine;
     private readonly AIServiceCollection _aiServices = new();
+    private ITrustService? _trustService = null;
 
     /// <summary>
     /// Create a new kernel instance
@@ -52,15 +54,16 @@ public sealed class KernelBuilder
             new SkillCollection(this._logger),
             this._aiServices.Build(),
             this._promptTemplateEngine ?? new PromptTemplateEngine(this._logger),
-            this._memory,
+            this._memoryFactory.Invoke(),
             this._config,
-            this._logger
+            this._logger,
+            this._trustService
         );
 
         // TODO: decouple this from 'UseMemory' kernel extension
-        if (this._memoryStorage != null)
+        if (this._memoryStorageFactory != null)
         {
-            instance.UseMemory(this._memoryStorage);
+            instance.UseMemory(this._memoryStorageFactory.Invoke());
         }
 
         return instance;
@@ -86,7 +89,19 @@ public sealed class KernelBuilder
     public KernelBuilder WithMemory(ISemanticTextMemory memory)
     {
         Verify.NotNull(memory);
-        this._memory = memory;
+        this._memoryFactory = () => memory;
+        return this;
+    }
+
+    /// <summary>
+    /// Add a semantic text memory store factory.
+    /// </summary>
+    /// <param name="factory">The store factory.</param>
+    /// <returns>Updated kernel builder including the semantic text memory entity.</returns>
+    public KernelBuilder WithMemory<TStore>(Func<(ILogger Logger, KernelConfig Config), TStore> factory) where TStore : ISemanticTextMemory
+    {
+        Verify.NotNull(factory);
+        this._memoryFactory = () => factory((this._logger, this._config));
         return this;
     }
 
@@ -98,7 +113,19 @@ public sealed class KernelBuilder
     public KernelBuilder WithMemoryStorage(IMemoryStore storage)
     {
         Verify.NotNull(storage);
-        this._memoryStorage = storage;
+        this._memoryStorageFactory = () => storage;
+        return this;
+    }
+
+    /// <summary>
+    /// Add memory storage factory to the kernel.
+    /// </summary>
+    /// <param name="factory">The storage factory.</param>
+    /// <returns>Updated kernel builder including the memory storage.</returns>
+    public KernelBuilder WithMemoryStorage<TStore>(Func<(ILogger Logger, KernelConfig Config), TStore> factory) where TStore : IMemoryStore
+    {
+        Verify.NotNull(factory);
+        this._memoryStorageFactory = () => factory((this._logger, this._config));
         return this;
     }
 
@@ -125,7 +152,7 @@ public sealed class KernelBuilder
     {
         Verify.NotNull(storage);
         Verify.NotNull(embeddingGenerator);
-        this._memory = new SemanticTextMemory(storage, embeddingGenerator);
+        this._memoryFactory = () => new SemanticTextMemory(storage, embeddingGenerator);
         return this;
     }
 
@@ -150,6 +177,19 @@ public sealed class KernelBuilder
     {
         Verify.NotNull(config);
         this._config = config;
+        return this;
+    }
+
+    /// <summary>
+    /// Use the given default trust service with the kernel to be built.
+    /// Functions directly created through the kernel will use this trust service.
+    /// If null, the created functions will rely on the TrustService.DefaultTrusted implementation.
+    /// </summary>
+    /// <param name="trustService">Trust service to use.</param>
+    /// <returns>Updated kernel builder including the given service.</returns>
+    public KernelBuilder WithTrustService(ITrustService? trustService)
+    {
+        this._trustService = trustService;
         return this;
     }
 
